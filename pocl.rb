@@ -1,24 +1,27 @@
 class Pocl < Formula
   desc "MIT-licensed open source implementation of the OpenCL standard"
-  homepage "https://pocl.sourceforge.io/"
-  url "https://downloads.sourceforge.net/project/pocl/pocl-0.14.tar.gz"
-  sha256 "2127bf925a91fbbe3daf2f1bac0da5c8aceb16e2a9434977a3057eade974106a"
-
-  bottle do
-    sha256 "e840d7622cc3a4e2991cee46438f4338d3d792b880df87fd997f495c977c4fde" => :sierra
-    sha256 "750fd4166e8cddc574d57e283eec0d7a2e8fa50831c42d6e24a5f989fbe2e9b8" => :el_capitan
-    sha256 "0c57dd7d46167d461626abf00d3635cdd39086bda540c84bffd85c99fad7d2de" => :yosemite
-    sha256 "6a531d396319978d4c69ba6315832b3c23ee27aedb2b4296836c7c239d319a8f" => :x86_64_linux
-  end
+  homepage "http://portablecl.org/"
+  url "http://portablecl.org/downloads/pocl-1.0.tar.gz"
+  sha256 "94bd86a2f9847c03e6c3bf8dca12af3734f8b272ffeacbc3fa8fcca58844b1d4"
 
   depends_on "cmake" => :build
   depends_on "pkg-config" => :build
-  depends_on "llvm"
-  depends_on "hwloc"
-  depends_on "libtool" => :run
 
+  # POCL 1.0 does not support LLVM 6
+  depends_on "llvm@5"
+
+  depends_on "hwloc"
+  depends_on "libtool"
+
+  option "without-test", "Skip build-time tests (not recommended)"
+  
   def install
-    system "cmake", ".", *std_cmake_args
+    cmake_args = std_cmake_args
+    cmake_args << "-DWITH_LLVM_CONFIG=#{Formula["llvm@5"].opt_bin}/llvm-config"
+    cmake_args << "-DCMAKE_FIND_FRAMEWORK=NEVER" # Preventing LTDL_H been set to Mono's include path
+    system "cmake", ".", *cmake_args
+    system "make"
+    # system "make", "check" if build.with? "test" # Disable for now due to https://github.com/pocl/pocl/issues/412
     system "make", "install"
   end
 end
